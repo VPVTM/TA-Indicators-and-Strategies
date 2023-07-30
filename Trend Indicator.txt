@@ -1,0 +1,166 @@
+study(title="MTF EMA Combo with Background Color", shorttitle="PERSO - TREND INDICATOR", overlay=true)
+
+///EMA 2
+len2 = input(3200, minval=1, title="4H EMA 200")
+src2 = input(close, title="Source")
+resCustom2 = input(title="Timeframe", defval="15")
+res2 = resCustom2
+out2 = security(tickerid, res2, ema(src2, len2))
+plot(out2, color=orange, linewidth=2, transp=0, title="4H EMA 200")
+
+//EMA3
+len3 = input(4800, minval=1, title="4H MA 300")
+src3 = input(close, title="Source")
+resCustom3 = input(title="Timeframe", defval="15")
+res3 =  resCustom3
+out3 = security(tickerid, res3, sma(src3, len3))
+plot(out3, color=red, linewidth=1, transp=0, title="4H MA 300")
+
+//EMA4
+len4 = input(2400, minval=1, title="Daily MA 100")
+src4 = input(close, title="Source")
+resCustom4 = input(title="Timeframe", defval="60")
+res4 = resCustom4
+out4 = security(tickerid, resCustom4, sma(src4, len4))
+plot(out4, color=green, linewidth=2, transp=0, title="Daily MA 100")
+
+//EMA5
+len5 = input(13, minval=1, title="15 min EMA 13")
+src5 = input(close, title="Source")
+resCustom5 = input(title="Timeframe", defval="15")
+res5 = resCustom5
+out5 = security(tickerid, resCustom5, ema(src5, len5))
+plot(out5, color=purple, linewidth=1, transp=0, title="15 min EMA 13")
+
+//EMA6
+len6 = input(25, minval=1, title="15 min EMA 25")
+src6 = input(close, title="Source")
+resCustom6 = input(title="Timeframe", defval="15")
+res6 = resCustom6
+out6 = security(tickerid, resCustom6, ema(src6, len6))
+plot(out6, color=blue, linewidth=1, transp=0, title="15 min EMA 25")
+
+//EMA7
+len7 = input(52, minval=1, title="1h EMA 13")
+src7 = input(close, title="Source")
+resCustom7 = input(title="Timeframe", defval="15")
+res7 = resCustom7
+out7 = security(tickerid, resCustom7, ema(src7, len7))
+plot(out7, color=purple, linewidth=1, transp=0, title="1h EMA 13")
+
+//EMA8
+len8 = input(100, minval=1, title="1h EMA 25")
+src8 = input(close, title="Source")
+resCustom8 = input(title="Timeframe", defval="15")
+res8 = resCustom8
+out8 = security(tickerid, resCustom8, ema(src8, len8))
+plot(out8, color=aqua, linewidth=1, transp=0, title="1h EMA 25")
+
+//EMA9
+len9 = input(400, minval=1, title="4h EMA 25")
+src9 = input(close, title="Source")
+resCustom9 = input(title="Timeframe", defval="15")
+res9 = resCustom9
+out9 = security(tickerid, resCustom9, ema(src9, len9))
+plot(out9, color=blue, linewidth=2, transp=0, title="4h EMA 25")
+
+//EMA10
+len10 = input(208, minval=1, title="4h EMA 13")
+src10 = input(close, title="Source")
+resCustom10 = input(title="Timeframe", defval="15")
+res10 = resCustom10
+out10 = security(tickerid, resCustom10, ema(src10, len10))
+plot(out10, color=purple, linewidth=2, transp=0, title="4h EMA 13")
+
+//EMA11
+len11 = input(1248, minval=1, title="Daily EMA 13")
+src11 = input(close, title="Source")
+resCustom11 = input(title="Timeframe", defval="15")
+res11 = resCustom11
+out11 = security(tickerid, resCustom11, ema(src11, len11))
+plot(out11, color=lime, linewidth=2, transp=0, title="Daily EMA 13")
+
+//EMA12
+len12 = input(4800, minval=1, title="Daily MA 200 ")
+src12= input(close, title="Source")
+resCustom12 = input(title="Timeframe", defval="60")
+res12 = resCustom12
+out12 = security(tickerid, resCustom12, sma(src12, len12))
+plot(out12, color=green, linewidth=1, transp=0, title="Daily MA 200")
+
+//EMA13
+len13 = input(4800, minval=1, title="Daily EMA 200 ")
+src13= input(close, title="Source")
+resCustom13 = input(title="Timeframe", defval="60")
+res13 = resCustom13
+out13 = security(tickerid, resCustom13, ema(src13, len13))
+plot(out13, color=green, linewidth=1, transp=0, title="Daily EMA 200")
+
+//EMA14
+len14 = input(3600, minval=1, title="Daily MA 300 ")
+src14= input(close, title="Source")
+resCustom14 = input(title="Timeframe", defval="120")
+res14 = resCustom13
+out14 = security(tickerid, resCustom14, sma(src14, len14))
+plot(out14, color=green, linewidth=1, transp=0, title="Daily MA 300")
+
+//EMA15
+len15 = input(800, minval=1, title="1H EMA 200 ")
+src15= input(close, title="Source")
+resCustom15 = input(title="Timeframe", defval="15")
+res15 = resCustom15
+out15 = security(tickerid, resCustom15, ema(src15, len15))
+plot(out15, color=red, linewidth=1, transp=0, title="1H EMA 200")
+
+//EMA16
+len16 = input(400, minval=1, title="1H MA 100 ")
+src16= input(close, title="Source")
+resCustom16 = input(title="Timeframe", defval="15")
+res16 = resCustom16
+out16 = security(tickerid, resCustom16, sma(src16, len16))
+plot(out16, color=blue, linewidth=1, transp=0, title="1H MA 100")
+
+//EMA17
+len17 = input(1200, minval=1, title="1H MA 300 ")
+src17= input(close, title="Source")
+resCustom17 = input(title="Timeframe", defval="15")
+res17 = resCustom17
+out17 = security(tickerid, resCustom17, sma(src17, len17))
+plot(out17, color=blue, linewidth=1, transp=0, title="1H MA 300")
+
+
+
+
+BULLSUPERSTRONGTREND = close>out2 and close>out4 and out2>out3 and out3>out4 and out2>out4 and out10>out9 ? green : na
+BULLSTRONGTREND = close>out2 and close>out4 and out2>out3 and out3<out4 and out10>out9  ? aqua : na
+BULLSTRONGTRENDaussi = close>out2 and close>out4 and out2>out3 and out2<out4 and out10>out9 ? aqua : na
+BULLWEAKTREND = close>out2 and close<out4 and out2>out3 and out2<out4 and out10>out9? purple : na
+BULLWEAKTRENDaussi = close>out2 and close<out4 and out2>out3 and out3<out4 and out10>out9? purple : na
+BULLWEAKTRENDdeux = close>out2 and close>out4 and out2<out3 and out3<out4 and out10>out9? purple : na
+BULLWEAKTRENDdeuxaussi = close>out2 and close>out4 and out2<out3 and out3<out4 and out10>out9? purple : na
+
+BEARSUPERSTRONGTREND = close<out2 and close<out4 and out2<out3 and out3<out4 and out2<out4 and out10<out9? red : na
+BEARSTRONGTREND = close<out2 and close<out4 and out2<out3 and out3>out4 and out10<out9 ? orange : na
+BEARSTRONGTRENDaussi = close<out2 and close<out4 and out2<out3 and out2>out4 and out10<out9? orange : na
+BEARWEAKTREND = close<out2 and close>out4 and out2<out3 and out2>out4 and out10<out9 ? yellow : na
+BEARWEAKTRENDaussi = close<out2 and close>out4 and out2<out3 and out3>out4 and out10<out9 ? yellow : na
+BEARWEAKTRENDdeux = close<out2 and close<out4 and out2>out3 and out3>out4 and out10<out9 ? yellow : na
+BEARWEAKTRENDdeuxaussi = close<out2 and close<out4 and out2>out3 and out3>out4 and out10<out9 ? yellow : na
+
+
+
+bgcolor(BULLSUPERSTRONGTREND, transp=75, offset=0)
+bgcolor(BULLSTRONGTREND, transp=75, offset=0)
+bgcolor(BULLSTRONGTRENDaussi, transp=75, offset=0)
+bgcolor(BULLWEAKTREND, transp=75, offset=0)
+bgcolor(BULLWEAKTRENDaussi, transp=75, offset=0)
+bgcolor(BULLWEAKTRENDdeux, transp=75, offset=0)
+bgcolor(BULLWEAKTRENDdeuxaussi, transp=75, offset=0)
+
+bgcolor(BEARSUPERSTRONGTREND, transp=75, offset=0)
+bgcolor(BEARSTRONGTREND, transp=75, offset=0)
+bgcolor(BEARSTRONGTRENDaussi, transp=75, offset=0)
+bgcolor(BEARWEAKTREND, transp=75, offset=0)
+bgcolor(BEARWEAKTRENDaussi, transp=75, offset=0)
+bgcolor(BEARWEAKTRENDdeux, transp=75, offset=0)
+bgcolor(BEARWEAKTRENDdeuxaussi, transp=75, offset=0)
