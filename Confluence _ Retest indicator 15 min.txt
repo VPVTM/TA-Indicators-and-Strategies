@@ -1,0 +1,498 @@
+ 
+//@version=3
+study(title="Confluence/retest indicator 15 min", shorttitle="Confluence/retest  indicator 15 min", overlay=true)
+
+
+
+//// TRAILING STOP
+
+Periods = input(title="ATR Period",  defval=10)
+src213 = input(close, title="Source")
+Multiplier = input(title="ATR Multiplier",  step=0.1, defval=3.0)
+changeATR= input(title="Change ATR Calculation Method ?",  defval=true)
+showsignals = input(title="Show Buy/Sell Signals ?",  defval=true)
+highlighting = input(title="Highlighter On/Off ?",  defval=true)
+atr2 = sma(tr, Periods)
+atr= changeATR ? atr(Periods) : atr2
+
+up=src213-(Multiplier*atr)
+up1 = nz(up[1],up)
+up := close[1] > up1 ? max(up,up1) : up
+
+dn=src213+(Multiplier*atr)
+dn1 = nz(dn[1], dn)
+dn := close[1] < dn1 ? min(dn, dn1) : dn
+
+trend = 1
+trend := nz(trend[1], trend)
+trend := trend == -1 and close > dn1 ? 1 : trend == 1 and close < up1 ? -1 : trend
+upPlot = plot(trend == 1 ? up : na, title="Up Trend", style=linebr, linewidth=2,transp=100, color=green)
+buySignal = trend == 1 and trend[1] == -1
+//plotshape(buySignal ? up : na, title="UpTrend Begins", location=location.absolute, style=shape.circle, size=size.tiny, color=green, transp=0)
+//plotshape(buySignal and showsignals ? up : na, title="Buy", text="Buy", location=location.absolute, style=shape.labelup, size=size.tiny, color=green, textcolor=white, transp=0)
+dnPlot = plot(trend == 1 ? na : dn, title="Down Trend", style=linebr, linewidth=2, transp=100, color=red)
+sellSignal = trend == -1 and trend[1] == 1
+//plotshape(sellSignal ? dn : na, title="DownTrend Begins", location=location.absolute, style=shape.circle, size=size.tiny, color=red, transp=0)
+//plotshape(sellSignal and showsignals ? dn : na, title="Sell", text="Sell", location=location.absolute, style=shape.labeldown, size=size.tiny, color=red, textcolor=white, transp=0)
+mPlot = plot(close, title="", style=circles, linewidth=0)
+longFillColor = highlighting ? (trend == 1 ? green : white) : white
+shortFillColor = highlighting ? (trend == -1 ? red : white) : white
+fill(mPlot, upPlot, title="UpTrend Highligter", color=longFillColor)
+fill(mPlot, dnPlot, title="DownTrend Highligter", color=shortFillColor)
+//alertcondition(buySignal, title="SuperTrend Buy", message="SuperTrend Buy!")
+//alertcondition(sellSignal, title="SuperTrend Sell", message="SuperTrend Sell!")
+changeCond = trend != trend[1]
+//alertcondition(changeCond, title="SuperTrend Direction Change", message="SuperTrend has changed direction!")
+
+atrgreen = trend == 1 
+atrred = trend == -1
+
+///// DIRECTION EMA DAILY 13
+
+// === INPUTS
+
+//DAILY13
+ma_8 = input(false, title="8-EMA")
+ma_type_h   = input(defval="EMA", title="4H EMA 200 Type: ", options=["SMA", "EMA", "WMA", "VWMA", "SMMA", "DEMA", "TEMA", "HullMA", "ZEMA", "TMA", "SSMA"])
+ma_len_h    = input(defval=1248, title="Daily 13 EMA Lenght", minval=1)
+ma_src_h    = input(close, title="4H EMA 200  Source")
+reaction_ma_8  = input(defval=1, title="4H EMA 200  Reaction", minval=1)
+
+// SuperSmoother filt100
+// © 2013  John F. Ehlers
+variant_supersmoother(src,len) =>
+    a1 = exp(-1.414*3.14159 / len)
+    b1 = 2*a1*cos(1.414*3.14159 / len)
+    c2 = b1
+    c3 = (-a1)*a1
+    c1 = 1 - c2 - c3
+    v9 = 0.0
+    v9 := c1*(src + nz(src[1])) / 2 + c2*nz(v9[1]) + c3*nz(v9[2])
+    v9
+    
+variant_smoothed(src,len) =>
+    v5 = 0.0
+    v5 := na(v5[1]) ? sma(src, len) : (v5[1] * (len - 1) + src) / len
+    v5
+
+variant_zerolagema(src,len) =>
+    ema1 = ema(src, len)
+    ema2 = ema(ema1, len)
+    v10 = ema1+(ema1-ema2)
+    v10
+    
+variant_doubleema(src,len) =>
+    v2 = ema(src, len)
+    v6 = 2 * v2 - ema(v2, len)
+    v6
+
+variant_tripleema(src,len) =>
+    v2 = ema(src, len)
+    v7 = 3 * (v2 - ema(v2, len)) + ema(ema(v2, len), len)             
+    v7
+    
+variant(type, src, len) =>
+    type=="EMA"     ? ema(src,len) : 
+      type=="WMA"   ? wma(src,len): 
+      type=="VWMA"  ? vwma(src,len) : 
+      type=="SMMA"  ? variant_smoothed(src,len) : 
+      type=="DEMA"  ? variant_doubleema(src,len): 
+      type=="TEMA"  ? variant_tripleema(src,len): 
+      type=="HullMA"? wma(2 * wma(src, len / 2) - wma(src, len), round(sqrt(len))) :
+      type=="SSMA"  ? variant_supersmoother(src,len) : 
+      type=="ZEMA"  ? variant_zerolagema(src,len) : 
+      type=="TMA"   ? sma(sma(src,len),len) : sma(src,len)
+
+
+// === Moving Average
+ma_series_h = variant(ma_type_h,ma_src_h,ma_len_h)
+
+direction_h = 0
+direction_h := rising(ma_series_h,reaction_ma_8) ? 1 : falling(ma_series_h,reaction_ma_8) ? -1 : nz(direction_h[1])
+change_direction_h= change(direction_h,1)
+
+// Plot MA series and color it according too direction
+pcol_h = direction_h>0 ? lime : direction_h<0 ? red : na
+i=plot( ma_8? ma_series_h :na, color=pcol_h,style=line,join=true,linewidth=2,transp=10,title="8-MA Plot")
+
+/// Entry/Exit Conditions
+
+ascending = direction_h>0 
+descending = direction_h<0
+
+
+
+
+
+// Inputs // si en TF 1H
+len1 = input(1, minval=1, title="trend")
+len2 = input(800, minval=1, title="Length 4H EMA 200")
+len3 = input(1200, minval=1, title="Length 4H MA 300")
+len5 = input(13, minval=1, title="1H EMA 13")
+len6 = input(25, minval=1, title="1H EMA 25")
+len7 = input(52, minval=1, title="4H EMA 13")
+len8 = input(100, minval=1, title="4H EMA 25")
+len9 = input(400, minval=1, title="16H EMA 25")
+len10 = input(208, minval=1, title="16H EMA 13")
+len11= input(312, minval=1, title="Daily 13  ")
+len212= input(8, minval=1, title="1H EMA 8")
+
+
+len2122= input(32, minval=1, title="4H EMA 8")
+len62 = input(100, minval=1, title="4H EMA 25")
+len52 = input(52, minval=1, title="4H EMA 13")
+len82 = input(400, minval=1, title="16H EMA 25")
+len72 = input(208, minval=1, title="16H EMA 13")
+
+///swingbull = out212>out6 and out5>out6 and out5>out8 and out7>out8 and out212>out7
+
+
+
+
+
+
+
+// EMAs Values imported
+
+src1 = input(close, title="Source")
+out1 = ema(src1, len1)
+src2 = input(close, title="Source")
+out2 = ema(src2, len2)
+src3 = input(close, title="Source")
+out3 =  sma(src3, len3)
+src5 = input(close, title="Source")
+out5 =  ema(src5, len5)
+src6 = input(close, title="Source")
+out6 =  ema(src6, len6)
+src7 = input(close, title="Source")
+out7 =  ema(src7, len7)
+src8 = input(close, title="Source")
+out8 =  ema(src8, len8)
+src9 = input(close, title="Source")
+out9 =  ema(src9, len9)
+src10 = input(close, title="Source")
+out10 =  ema(src10, len10)
+src13 = input(close, title="Source")
+out11 =  ema(src13, len11)
+src212 = input(close, title="Source")
+out212 =  ema(src212, len212)
+
+src2122 = input(close, title="Source")
+out2122 =  ema(src2122, len2122)
+src62 = input(close, title="Source")
+out62 =  ema(src62, len62)
+src52 = input(close, title="Source")
+out52 =  ema(src52, len52)
+src72 = input(close, title="Source")
+out72 =  ema(src72, len72)
+src82 = input(close, title="Source")
+out82 =  ema(src82, len82)
+
+
+
+
+
+
+
+// KRILL EMA SET ma20 - cross with ema13 on daily = nika's trick
+//ma20Source = input(defval = close)
+//ma20Length = input(defval = 20, minval = 1)
+
+// ema13
+ema13src = input(defval = close)
+ema13len = input(13, minval=1) 
+
+//ema 25
+ema25Source = input(defval = close)
+ema25Length = input(defval = 25, minval = 1)
+
+//ema 33
+ema33Source = input(defval = close)
+ema33Length = input(defval = 33, minval = 1)
+
+//ema 52
+ema52src = input(defval = close)
+ema52len = input(defval = 52, minval = 1)
+
+//ema 100
+ema100src = input(defval = close)
+ema100len = input(defval = 100, minval = 1)
+
+// ma100
+ma100Source = input(defval = close)
+ma100Length = input(defval = 100, minval = 1)
+
+// ema200
+ema200Source = input(defval = close)
+ema200Length = input(defval = 200, minval = 1)
+
+
+ema8Source = input(defval = close)
+ema8Length = input(defval = 8, minval = 1)
+
+//Declare EMA
+//ma20 = sma(ma20Source, ma20Length)
+ma100 = sma(ma100Source, ma100Length)
+ema200 = ema(ema200Source, ema200Length)
+ema25 = ema(ema25Source, ema25Length)
+ema33 = ema(ema33Source, ema33Length)
+ema13 = ema(ema13src, ema13len)
+ema52 = ema(ema52src, ema52len)
+ema100 = ema(ema100src, ema100len)
+ema8= ema(ema8Source, ema8Length)
+
+//Draw lines
+//plot(series=ma20, title="MA20", color = #ff0000, linewidth=1,transp=0)
+//plot(series=ema200, title="EMA200", color = black, linewidth=1,transp=0)
+//plot(series=ma100, title="MA100", color = #540098, style = cross, linewidth=1,transp=0)
+
+
+//plot(series=ema13, title="EMA13", color=#25ff00, linewidth=1,transp=0)
+//plot(series=ema25, title="EMA25", color=#00ffd4, linewidth=1,transp=0)
+//plot(series=ema33, title="EMA33", color=#ff00ba, linewidth=1,transp=0)
+
+
+
+
+
+
+/// MACD
+
+
+fast_length2 = input(title="Fast Length", defval=12)
+slow_length2 = input(title="Slow Length", defval=26)
+src27 = input(title="Source", defval=close)
+signal_length2 = input(title="Signal Smoothing",  minval = 1, maxval = 50, defval = 9)
+
+fast_length = input(title="Fast Length", defval=48)
+slow_length = input(title="Slow Length", defval=104)
+src = input(title="Source", defval=close)
+signal_length = input(title="Signal Smoothing",  minval = 1, maxval = 50, defval = 36)
+
+sma_source = input(title="Oscillator MA Type",  defval="EMA", options=["SMA", "EMA"])
+sma_signal = input(title="Signal Line MA Type", defval="EMA", options=["SMA", "EMA"])
+
+sma_source2 = input(title="Oscillator MA Type",  defval="EMA", options=["SMA", "EMA"])
+sma_signal2 = input(title="Signal Line MA Type", defval="EMA", options=["SMA", "EMA"])
+
+// Calculating
+fast_ma = sma_source == "SMA" ? sma(src, fast_length) : ema(src, fast_length)
+slow_ma = sma_source == "SMA" ? sma(src, slow_length) : ema(src, slow_length)
+macd = fast_ma - slow_ma
+signal = sma_signal == "SMA" ? sma(macd, signal_length) : ema(macd, signal_length)
+hist = macd - signal
+
+fast_ma2 = sma_source2 == "SMA" ? sma(src27, fast_length2) : ema(src27, fast_length2)
+slow_ma2 = sma_source2 == "SMA" ? sma(src27, slow_length2) : ema(src27, slow_length2)
+macd2 = fast_ma2 - slow_ma2
+signal2 = sma_signal2 == "SMA" ? sma(macd2, signal_length2) : ema(macd2, signal_length2)
+hist2 = macd2 - signal2
+
+
+crossoverBear = macd<signal
+crossoverBull = macd>signal
+
+
+crossoverBear2 = macd2<signal2
+crossoverBull2 = macd2>signal2
+
+
+
+
+// Stochastic RSI 
+smoothK2 = input(20, "K2", minval=1)
+smoothD2 = input(20, "D2", minval=1)
+lengthRSI2 = input(250, "RSI Length 2", minval=1)
+lengthStoch2 = input(250, "Stochastic Length 2", minval=1)
+src11 = input(close, title="RSI Source 2")
+rsi2 = rsi(src11, lengthRSI2)
+k2 = sma(stoch(rsi2, rsi2, rsi2, lengthStoch2), smoothK2)
+d2 = sma(k2, smoothD2)
+StochOverBought = input(80, title="Stochastic overbought condition 2")
+StochOverSold = input(20, title="Stochastic oversold condition 2")
+
+
+exitsrsilong =  k2 < d2
+srsilong = k2 > d2 and k2<StochOverSold
+
+exitsrsishort = k2 > d2
+srsishort = k2 < d2 and k2>StochOverBought
+
+
+
+
+start = input(title="Start", type=float, step=0.00005, defval=0.00252)
+increment = input(title="Increment", type=float, step=0.00005, defval=0.00133)
+maximum = input(title="Maximum", type=float, step=0.01, defval=0.220)
+width = input(title="Point Width", type=integer, minval=1, defval=20)
+highlightStartPoints = input(title="Highlight Start Points ?", defval=true)
+
+psar = sar(start, increment, maximum)
+dir = psar < close ? 1 : -1
+
+Buypsar = psar < close ? 1 : na
+Sellpsar = psar < close ? na : -1
+
+//plotshape(dir == 1 and dir[1] == -1 and highlightStartPoints ? psar : na, title="Buypsar", style=shape.labelup, location=location.absolute, size=size.normal, text="Buy", transp=0, textcolor = white, color=green, transp=0)
+//plotshape(dir == -1 and dir[1] == 1 and highlightStartPoints ? psar : na, title="Sellpsar", style=shape.labeldown, location=location.absolute, size=size.normal, text="Sell", transp=0, textcolor = white, color=red, transp=0)
+
+///CROSS EMA100 AND MACD IN 15 MIN
+//and ema13<ema25 and Sellpsar
+short2 =  ema13<ema100  and crossoverBear2 and ema8<ema52
+exitshort2 = crossoverBull2
+inshort2 = na
+inshort2:= short2[1]? true : exitshort2[1]? false : short2[1]
+SHORT2 = short2 and not inshort2
+SHORT2_EXIT = exitshort2 and inshort2
+//plotshape(SHORT2, color=navy, style=shape.square, title="sell2", text="", location=location.abovebar,transp=0,   offset=0, size=size.tiny)
+
+
+//and ema13>ema25 and Buypsar
+buy2 =  ema13>ema100 and crossoverBull2 and ema8>ema52
+exitbuy2 = crossoverBear2
+inbuy2 = na
+inbuy2:= buy2[1]? true : exitbuy2[1]? false : buy2[1]
+BUY2 = buy2 and not inbuy2
+BUY2_EXIT = exitbuy2 and inbuy2
+//plotshape(BUY2, color=red, style=shape.square, title="buy2", text="", location=location.belowbar,transp=0,   offset=0, size=size.tiny)
+
+
+
+//and ema13<ema25 and Sellpsar
+short =  high>ema13  and srsishort  and Sellpsar and ema13<ma100 and crossoverBear and descending and high<ema52 and atrred
+exitshort = exitsrsishort
+inshort = na
+inshort:= short[1]? true : exitshort[1]? false : short[1]
+SHORT = short and not inshort
+SHORT_EXIT = exitshort and inshort
+//plotshape(SHORT, color=navy, style=shape.triangledown, title="sell", text="", location=location.abovebar,transp=0,   offset=0, size=size.tiny)
+
+
+//and ema13>ema25 and Buypsar
+buy =  low<ema13  and srsilong  and Buypsar and ema13>ma100 and crossoverBull and ascending and low>ema52 and atrgreen
+exitbuy = exitsrsilong
+inbuy = na
+inbuy:= buy[1]? true : exitbuy[1]? false : buy[1]
+BUY = buy and not inbuy
+BUY_EXIT = exitbuy and inbuy
+//plotshape(BUY, color=red, style=shape.triangleup, title="buy", text="", location=location.belowbar,transp=0,   offset=0, size=size.tiny)
+
+
+
+
+
+
+
+///BOTTOM SIGNAL 1H // and ascending2 and out7>out8
+//bottom=close>out3 and sRsiCrossOver4Hlongcross2 and out7>out8 and exitsrsishort
+//exitbottom = crossover(out5,out6) or crossover(out7,out8) or crossover(out10,out9) or sRsiCrossOver4Hshortcross
+bottom=out212>out6 and out5>out6 and out5>out8 and out7>out8 and out212>out7 and ascending and atrgreen 
+exitbottom = out212<out6 and out5<out6 and out5<out8 
+// In Positions Conditions - This will stop orders from pyramiding (Example: Do NOT go long when we are already in a long position, and do NOT trigger an exit alert unless we are in a position)
+inbottom = na
+inbottom:= bottom[1]? true : exitbottom[1]? false : inbottom[1]
+BOTTOM = bottom and not inbottom
+BOTTOM_EXIT = exitbottom and inbottom
+// Arrow Plots
+plotshape(BOTTOM, color=red, style=shape.circle, title="BULL 1H", text="", location=location.belowbar,transp=0,   offset=0, size=size.tiny)
+//plotshape(BOTTOM_EXIT, color=orange, style=shape.triangledown, title="Exit BULL 1H", text="", location=location.belowbar,transp=0,   offset=0, size=size.tiny)
+// Alerts
+//alertcondition(BOTTOM, title="LONG bottom 4h")
+//alertcondition(BOTTOM_EXIT, title="TP - EXIT Long bottom 1h")
+
+
+///TOP SIGNAL 1H SHORT //and ascending4 and out7<out8
+//bottom2= close<out3 and sRsiCrossOver4Hshortcross2 and out7<out8 and exitsrsilong
+//exitbottom2 = crossunder(out5,out6) or crossunder(out7,out8) or crossunder(out10,out9) or sRsiCrossOver4Hlongcross  and descending
+bottom2= out212<out6 and out5<out6 and out5<out8 and out7<out8 and out212<out7 and atrred and descending 
+exitbottom2 = out212>out6 and out5>out6 and out5>out8 
+// In Positions Conditions - This will stop orders from pyramiding (Example: Do NOT go long when we are already in a long position, and do NOT trigger an exit alert unless we are in a position)
+inbottom2 = na
+inbottom2:= bottom2[1]? true : exitbottom2[1]? false : inbottom2[1]
+BOTTOM2 = bottom2 and not inbottom2
+BOTTOM2_EXIT = exitbottom2 and inbottom2
+// Arrow Plots
+plotshape(BOTTOM2, color=navy, style=shape.circle, title="BEAR 1H", text="", location=location.abovebar,transp=0,   offset=0, size=size.tiny)
+//plotshape(BOTTOM_EXIT, color=purple, style=shape.triangleup, title="Exit BEAR 1H", text="", location=location.belowbar,transp=0,   offset=0, size=size.tiny)
+// Alerts
+//alertcondition(BOTTOM, title="SHORT TOP 4h")
+//alertcondition(BOTTOM_EXIT, title="TP - EXIT Long bottom 1h")
+
+
+///
+/////////////////and ascending
+
+swingbull4H = out2122>out62 and out52>out62 and out52>out82 and out72>out82 and out2122>out72  and atrgreen
+exitswingbull4H= out2122<out62 and out52<out62 and out52<out82 
+inswingbull4H = na
+inswingbull4H:= swingbull4H[1]? true : exitswingbull4H[1]? false : swingbull4H[1]
+SWINGBULL4H = swingbull4H and not inswingbull4H
+SWINGBULL4H_EXIT = exitswingbull4H and inswingbull4H
+//plotshape(SWINGBULL4H, color=red, style=shape.circle, title="Swing BULL 4H", text="", location=location.belowbar,transp=0,   offset=0, size=size.small)
+//plotshape(SWINGBULL4H_EXIT, color=orange, style=shape.square, title="EXIT Swing BULL 4H", text="", location=location.abovebar,transp=0,   offset=0, size=size.small)
+//alertcondition(SWINGBULL, title="SWINGBULL")
+//alertcondition(SWINGBULL_EXIT, title="SWINGBULL exit")
+
+
+
+
+swingbull4H2 = out2122<out62 and out52<out62 and out52<out82 and out72<out82 and out2122<out72 and descending and atrred
+exitswingbull4H2= out2122>out62 and out52>out62 and out52>out82 
+inswingbull4H2 = na
+inswingbull4H2:= swingbull4H2[1]? true : exitswingbull4H2[1]? false : swingbull4H2[1]
+SWINGBULL4H2 = swingbull4H2 and not inswingbull4H2
+SWINGBULL4H2_EXIT = exitswingbull4H2 and inswingbull4H2
+//plotshape(SWINGBULL4H2, color=navy, style=shape.circle, title="Swing BEAR 4H", text="", location=location.abovebar,transp=0,   offset=0, size=size.small)
+//plotshape(SWINGBULL4H2_EXIT, color=purple, style=shape.square, title="EXIT Swing BEAR 4H", text="", location=location.abovebar,transp=0,   offset=0, size=size.small)
+//alertcondition(SWINGBULL, title="SWINGBULL")
+//alertcondition(SWINGBULL_EXIT, title="SWINGBULL exit")
+
+
+
+MEGABULL1 = low<ema13  and srsilong  and Buypsar and ema13>ma100 and crossoverBull and ascending
+MEGABULL2 = out212>out6 and out5>out6 and out5>out8 and out7>out8 and out212>out7 and ascending
+MEGABULL3 = out2122>out62 and out52>out62 and out52>out82 and out72>out82 and out2122>out72 and ascending
+MEGABULL4 = MEGABULL1 or MEGABULL2 or MEGABULL3
+
+MEGABEAR1 = high>ema13  and srsishort and ema52<ema100 and Sellpsar and ema13<ma100 and crossoverBear and descending
+MEGABEAR2 = out212<out6 and out5<out6 and out5<out8 and out7<out8 and out212<out7 and descending 
+MEGABEAR3 = out2122<out62 and out52<out62 and out52<out82 and out72<out82 and out2122<out72 and descending  
+MEGABEAR4 = MEGABEAR1 or MEGABEAR2 or MEGABEAR3
+////////////////////
+
+swingbull4H3 = MEGABULL4
+exitswingbull4H3= MEGABEAR4
+inswingbull4H3 = na
+inswingbull4H3:= swingbull4H3[1]? true : exitswingbull4H3[1]? false : swingbull4H3[1]
+SWINGBULL4H3 = swingbull4H3 and not inswingbull4H3
+SWINGBULL4H3_EXIT = exitswingbull4H3 and inswingbull4H3
+//plotshape(SWINGBULL4H3, color=red, style=shape.square, title="Swing BULL 4H", text="", location=location.belowbar,transp=0,   offset=0, size=size.small)
+//plotshape(SWINGBULL_EXIT, color=red, style=shape.cross, title="EXIT Swing BULL", text="Exit Swing Bull", location=location.abovebar,transp=0,   offset=0, size=size.small)
+//alertcondition(SWINGBULL, title="SWINGBULL")
+//alertcondition(SWINGBULL_EXIT, title="SWINGBULL exit")
+
+
+
+
+swingbull4H4 = MEGABEAR4
+exitswingbull4H4= MEGABULL4
+inswingbull4H4 = na
+inswingbull4H4:= swingbull4H4[1]? true : exitswingbull4H4[1]? false : swingbull4H4[1]
+SWINGBULL4H4 = swingbull4H4 and not inswingbull4H4
+SWINGBULL4H4_EXIT = exitswingbull4H4 and inswingbull4H4
+//plotshape(SWINGBULL4H4, color=navy, style=shape.square, title="Swing BEAR 4H", text="", location=location.abovebar,transp=0,   offset=0, size=size.small)
+//plotshape(SWINGBULL_EXIT, color=red, style=shape.cross, title="EXIT Swing BULL", text="Exit Swing Bull", location=location.abovebar,transp=0,   offset=0, size=size.small)
+//alertcondition(SWINGBULL, title="SWINGBULL")
+//alertcondition(SWINGBULL_EXIT, title="SWINGBULL exit")
+
+
+
+alertcondition(BUY or SHORT  ,  title="retest")
+alertcondition( BOTTOM or BOTTOM2  ,  title="compression")
+alertcondition( BOTTOM or BOTTOM2 or BUY or SHORT   ,  title="compression + retest")
+
+alertcondition( BOTTOM   ,  title="compression UP ONLY")
+alertcondition( BOTTOM2   ,  title="compression DOWN ONLY")
+
+alertcondition(BUY  ,  title="retest UP ONLY")
+alertcondition( SHORT  ,  title="retest DOWN ONLY")
